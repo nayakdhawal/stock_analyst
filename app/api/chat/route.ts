@@ -5,7 +5,7 @@ export async function POST(req: Request) {
     const { message } = await req.json()
     const webhookUrl =
       process.env.N8N_WEBHOOK_URL ||
-      "https://n8n.srv1031893.hstgr.cloud/webhook-test/61743c7f-648d-493d-ba76-708860eddd12"
+      "https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12"
 
     console.log("[v0] Webhook request started for message:", message)
     console.log("[v0] Using webhook URL:", webhookUrl)
