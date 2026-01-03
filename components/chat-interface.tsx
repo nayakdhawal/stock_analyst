@@ -148,7 +148,7 @@ export function ChatInterface() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter stock name or ticker (e.g. NVDA)..."
+              placeholder="Enter stock name or ticker (e.g. Reliance)..."
               className="bg-muted/50 pl-10"
               disabled={isLoading}
             />
