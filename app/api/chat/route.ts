@@ -3,29 +3,35 @@ import { NextResponse } from "next/server"
 export async function POST(req: Request) {
   try {
     const { message } = await req.json()
-    const webhookUrl =
-      process.env.N8N_WEBHOOK_URL ||
-      "https://n8n.srv1031893.hstgr.cloud/webhook-test/61743c7f-648d-493d-ba76-708860eddd12"
+    const isDev = process.env.NODE_ENV === "development"
+    const webhookUrl = process.env.N8N_WEBHOOK_URL
 
     console.log("[v0] Webhook request started for message:", message)
-    console.log("[v0] Using webhook URL:", webhookUrl)
+    console.log("[v0] Environment:", process.env.NODE_ENV)
 
     if (!webhookUrl) {
-      console.warn("[v0] N8N_WEBHOOK_URL is not set. Using mock response.")
-      return NextResponse.json({
-        analysis: `Here is a detailed analysis for ${message}...`,
-        stockData: {
-          ticker: message.toUpperCase(),
-          name: message,
-          price: 150.25,
-          change: 2.5,
-          changePercent: 1.67,
-          summary: "Strong performance in the current quarter with growth in cloud services and AI integration.",
-          marketCap: "2.5T",
-          peRatio: "28.4",
-        },
-      })
+      if (isDev) {
+        // Fallback for local development if no N8N_WEBHOOK_URL is set
+        const devFallback = "https://n8n.srv1031893.hstgr.cloud/webhook-test/61743c7f-648d-493d-ba76-708860eddd12"
+        console.warn("[v0] N8N_WEBHOOK_URL not set. Using dev fallback:", devFallback)
+        return await handleWebhookCall(devFallback, message)
+      }
+
+      console.warn("[v0] N8N_WEBHOOK_URL not set in production. Using default production URL.")
+      const prodFallback = "https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12"
+      return await handleWebhookCall(prodFallback, message)
     }
+
+    return await handleWebhookCall(webhookUrl, message)
+  } catch (error: any) {
+    console.error("[v0] API Error details:", error.message)
+    return NextResponse.json({ error: "Failed to process request", details: error.message }, { status: 500 })
+  }
+}
+
+async function handleWebhookCall(webhookUrl: string, message: string) {
+  try {
+    console.log("[v0] Using webhook URL:", webhookUrl)
 
     // We append the stock name as a query parameter
     const urlWithParams = new URL(webhookUrl)
