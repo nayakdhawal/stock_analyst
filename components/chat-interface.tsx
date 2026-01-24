@@ -99,12 +99,12 @@ export function ChatInterface() {
                 autoFocus
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Search ticker or company (e.g. AAPL, Reliance)..."
+                placeholder="Search company (provide entire company name)..."
                 className="flex-1 bg-transparent border-none focus:ring-0 py-6 px-4 text-lg outline-none"
               />
               <div className="pr-4">
                 <Button type="submit" size="lg" className="rounded-xl px-6 h-12">
-                  Ask AI
+                  Analyse Stock
                 </Button>
               </div>
             </div>
@@ -112,7 +112,7 @@ export function ChatInterface() {
 
           <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
             <span className="text-sm text-muted-foreground mr-2">Try:</span>
-            {["NVIDIA", "Reliance", "Tesla Future", "Dividend Stocks"].map((chip) => (
+            {["Reliance Industries Limited", "HDFC bank Limited", "Coal India Limited", "ITC Limited"].map((chip) => (
               <button
                 key={chip}
                 onClick={() => {
@@ -164,11 +164,11 @@ export function ChatInterface() {
 
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-          {/* Main Layout: Split View */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Main Layout: Split View or Full Width */}
+          <div className={`grid grid-cols-1 gap-8 ${latestAssistantMessage?.data || isLoading ? "lg:grid-cols-12" : ""}`}>
 
             {/* Left Column: Answer & Query Info */}
-            <div className="lg:col-span-7 space-y-8">
+            <div className={`${latestAssistantMessage?.data || isLoading ? "lg:col-span-7" : "lg:col-span-12 max-w-4xl mx-auto w-full"} space-y-8`}>
               {latestUserMessage && (
                 <h2 className="text-3xl font-bold tracking-tight text-foreground">
                   {latestUserMessage.content}
@@ -176,15 +176,24 @@ export function ChatInterface() {
               )}
 
               {isLoading && !latestAssistantMessage && (
-                <div className="space-y-4">
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-muted"></div>
-                  <div className="h-4 w-5/6 animate-pulse rounded bg-muted"></div>
-                  <div className="h-4 w-1/2 animate-pulse rounded bg-muted"></div>
+                <div className="space-y-6 animate-pulse">
+                  <div className="space-y-3">
+                    <div className="h-6 w-3/4 rounded-lg bg-muted/60"></div>
+                    <div className="h-4 w-5/6 rounded-lg bg-muted/40"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-full rounded-lg bg-muted/30"></div>
+                    <div className="h-4 w-11/12 rounded-lg bg-muted/30"></div>
+                    <div className="h-4 w-4/5 rounded-lg bg-muted/30"></div>
+                  </div>
+                  <div className="pt-4">
+                    <div className="h-32 w-full rounded-2xl bg-muted/20 border border-dashed border-muted/30"></div>
+                  </div>
                 </div>
               )}
 
               {latestAssistantMessage && (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
+                <div className="prose prose-sm dark:prose-invert max-w-none animate-in fade-in duration-300">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -198,13 +207,13 @@ export function ChatInterface() {
                       li: ({ ...props }) => <li className="pl-1 text-foreground/80" {...props} />,
                       strong: ({ ...props }) => <strong className="font-bold text-primary" {...props} />,
                       table: ({ ...props }) => (
-                        <div className="my-6 w-full overflow-hidden rounded-xl border border-border bg-card">
+                        <div className="my-6 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                           <table className="w-full text-left text-sm" {...props} />
                         </div>
                       ),
-                      thead: ({ ...props }) => <thead className="bg-muted border-b border-border" {...props} />,
-                      th: ({ ...props }) => <th className="px-4 py-3 font-semibold" {...props} />,
-                      td: ({ ...props }) => <td className="px-4 py-3 border-b border-border/50 last:border-0" {...props} />,
+                      thead: ({ ...props }) => <thead className="bg-muted/50 border-b border-border" {...props} />,
+                      th: ({ ...props }) => <th className="px-4 py-3 font-semibold text-muted-foreground" {...props} />,
+                      td: ({ ...props }) => <td className="px-4 py-3 border-b border-border/10 last:border-0" {...props} />,
                     }}
                   >
                     {latestAssistantMessage.content}
@@ -214,39 +223,43 @@ export function ChatInterface() {
             </div>
 
             {/* Right Column: Stock Data & Sidebar Cards */}
-            <div className="lg:col-span-5 space-y-6">
-              {latestAssistantMessage?.data ? (
-                <div className="sticky top-24">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Market Snapshot</h3>
-                    <div className="h-px flex-1 bg-border mx-4"></div>
-                  </div>
-                  <StockReport data={latestAssistantMessage.data} />
+            {(latestAssistantMessage?.data || isLoading) && (
+              <div className="lg:col-span-5 space-y-6">
+                {latestAssistantMessage?.data ? (
+                  <div className="sticky top-24">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Market Snapshot</h3>
+                      <div className="h-px flex-1 bg-border mx-4"></div>
+                    </div>
+                    <StockReport data={latestAssistantMessage.data} />
 
-                  {/* Related Actions */}
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <Card className="p-3 hover:bg-muted/50 cursor-pointer transition-colors border-dashed border-2 flex flex-col gap-2 group">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                        <Plus className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-medium">Add to Watchlist</span>
-                    </Card>
-                    <Card className="p-3 hover:bg-muted/50 cursor-pointer transition-colors border-dashed border-2 flex flex-col gap-2 group">
-                      <div className="h-8 w-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-colors">
-                        <Search className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-medium">Technical View</span>
-                    </Card>
+                    {/* Related Actions */}
+                    <div className="mt-6 grid grid-cols-2 gap-3">
+                      <Card className="p-3 hover:bg-muted/50 cursor-pointer transition-colors border-dashed border-2 flex flex-col gap-2 group">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-medium">Add to Watchlist</span>
+                      </Card>
+                      <Card className="p-3 hover:bg-muted/50 cursor-pointer transition-colors border-dashed border-2 flex flex-col gap-2 group">
+                        <div className="h-8 w-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-colors">
+                          <Search className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-medium">Technical View</span>
+                      </Card>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/20">
-                  <p className="text-sm text-muted-foreground italic">
-                    {isLoading ? "Fetching real-time data..." : "Analysis ready. No specific ticker data found."}
-                  </p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  isLoading && (
+                    <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/20 animate-pulse">
+                      <p className="text-sm text-muted-foreground italic">
+                        Fetching real-time data...
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
