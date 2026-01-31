@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { StockReport } from "@/components/stock-report"
+import { Loader } from "@/components/loader"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
@@ -164,68 +165,60 @@ export function ChatInterface() {
 
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-          {/* Main Layout: Split View or Full Width */}
-          <div className={`grid grid-cols-1 gap-8 ${latestAssistantMessage?.data || isLoading ? "lg:grid-cols-12" : ""}`}>
-
-            {/* Left Column: Answer & Query Info */}
-            <div className={`${latestAssistantMessage?.data || isLoading ? "lg:col-span-7" : "lg:col-span-12 max-w-4xl mx-auto w-full"} space-y-8`}>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
               {latestUserMessage && (
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground mb-12 text-center">
                   {latestUserMessage.content}
                 </h2>
               )}
-
-              {isLoading && !latestAssistantMessage && (
-                <div className="space-y-6 animate-pulse">
-                  <div className="space-y-3">
-                    <div className="h-6 w-3/4 rounded-lg bg-muted/60"></div>
-                    <div className="h-4 w-5/6 rounded-lg bg-muted/40"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-full rounded-lg bg-muted/30"></div>
-                    <div className="h-4 w-11/12 rounded-lg bg-muted/30"></div>
-                    <div className="h-4 w-4/5 rounded-lg bg-muted/30"></div>
-                  </div>
-                  <div className="pt-4">
-                    <div className="h-32 w-full rounded-2xl bg-muted/20 border border-dashed border-muted/30"></div>
-                  </div>
-                </div>
-              )}
-
-              {latestAssistantMessage && (
-                <div className="prose prose-sm dark:prose-invert max-w-none animate-in fade-in duration-300">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      h1: ({ ...props }) => <h1 className="mb-4 mt-6 text-2xl font-bold first:mt-0" {...props} />,
-                      h2: ({ ...props }) => (
-                        <h2 className="mb-3 mt-8 text-xl font-bold tracking-tight border-b pb-2" {...props} />
-                      ),
-                      h3: ({ ...props }) => <h3 className="mb-2 mt-4 text-lg font-bold" {...props} />,
-                      p: ({ ...props }) => <p className="mb-4 text-base leading-relaxed text-foreground/90 last:mb-0" {...props} />,
-                      ul: ({ ...props }) => <ul className="mb-4 list-disc space-y-2 pl-5" {...props} />,
-                      li: ({ ...props }) => <li className="pl-1 text-foreground/80" {...props} />,
-                      strong: ({ ...props }) => <strong className="font-bold text-primary" {...props} />,
-                      table: ({ ...props }) => (
-                        <div className="my-6 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                          <table className="w-full text-left text-sm" {...props} />
-                        </div>
-                      ),
-                      thead: ({ ...props }) => <thead className="bg-muted/50 border-b border-border" {...props} />,
-                      th: ({ ...props }) => <th className="px-4 py-3 font-semibold text-muted-foreground" {...props} />,
-                      td: ({ ...props }) => <td className="px-4 py-3 border-b border-border/10 last:border-0" {...props} />,
-                    }}
-                  >
-                    {latestAssistantMessage.content}
-                  </ReactMarkdown>
-                </div>
-              )}
+              <Loader />
             </div>
+          ) : (
+            /* Main Layout: Split View or Full Width */
+            <div className={`grid grid-cols-1 gap-8 ${latestAssistantMessage?.data ? "lg:grid-cols-12" : ""}`}>
 
-            {/* Right Column: Stock Data & Sidebar Cards */}
-            {(latestAssistantMessage?.data || isLoading) && (
-              <div className="lg:col-span-5 space-y-6">
-                {latestAssistantMessage?.data ? (
+              {/* Left Column: Answer & Query Info */}
+              <div className={`${latestAssistantMessage?.data ? "lg:col-span-7" : "lg:col-span-12 max-w-4xl mx-auto w-full"} space-y-8`}>
+                {latestUserMessage && (
+                  <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                    {latestUserMessage.content}
+                  </h2>
+                )}
+
+                {latestAssistantMessage && (
+                  <div className="prose prose-sm dark:prose-invert max-w-none animate-in fade-in duration-300">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ ...props }) => <h1 className="mb-4 mt-6 text-2xl font-bold first:mt-0" {...props} />,
+                        h2: ({ ...props }) => (
+                          <h2 className="mb-3 mt-8 text-xl font-bold tracking-tight border-b pb-2" {...props} />
+                        ),
+                        h3: ({ ...props }) => <h3 className="mb-2 mt-4 text-lg font-bold" {...props} />,
+                        p: ({ ...props }) => <p className="mb-4 text-base leading-relaxed text-foreground/90 last:mb-0" {...props} />,
+                        ul: ({ ...props }) => <ul className="mb-4 list-disc space-y-2 pl-5" {...props} />,
+                        li: ({ ...props }) => <li className="pl-1 text-foreground/80" {...props} />,
+                        strong: ({ ...props }) => <strong className="font-bold text-primary" {...props} />,
+                        table: ({ ...props }) => (
+                          <div className="my-6 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                            <table className="w-full text-left text-sm" {...props} />
+                          </div>
+                        ),
+                        thead: ({ ...props }) => <thead className="bg-muted/50 border-b border-border" {...props} />,
+                        th: ({ ...props }) => <th className="px-4 py-3 font-semibold text-muted-foreground" {...props} />,
+                        td: ({ ...props }) => <td className="px-4 py-3 border-b border-border/10 last:border-0" {...props} />,
+                      }}
+                    >
+                      {latestAssistantMessage.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Stock Data & Sidebar Cards */}
+              {latestAssistantMessage?.data && (
+                <div className="lg:col-span-5 space-y-6">
                   <div className="sticky top-24">
                     <div className="mb-4 flex items-center justify-between">
                       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Market Snapshot</h3>
@@ -249,18 +242,10 @@ export function ChatInterface() {
                       </Card>
                     </div>
                   </div>
-                ) : (
-                  isLoading && (
-                    <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/20 animate-pulse">
-                      <p className="text-sm text-muted-foreground italic">
-                        Fetching real-time data...
-                      </p>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

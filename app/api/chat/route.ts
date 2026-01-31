@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
 
-export const maxDuration = 90 // Set to 90 seconds to accommodate n8n workflow (50-70s)
-
 export async function POST(req: Request) {
   try {
     const { message } = await req.json()
