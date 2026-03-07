@@ -10,6 +10,12 @@ import { StockReport } from "@/components/stock-report"
 import { Loader } from "@/components/loader"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { supabase } from "@/lib/supabase"
+
+type StockSuggestion = {
+  symbol: string
+  name: string
+}
 
 type Message = {
   id: string
@@ -23,7 +29,53 @@ export function ChatInterface() {
   const [input, setInput] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
   const [hasSearched, setHasSearched] = React.useState(false)
+  const [suggestions, setSuggestions] = React.useState<StockSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = React.useState(false)
+  const [selectedIndex, setSelectedIndex] = React.useState(-1)
   const scrollRef = React.useRef<HTMLDivElement>(null)
+  const debounceTimer = React.useRef<NodeJS.Timeout | null>(null)
+
+  const fetchSuggestions = async (query: string) => {
+    if (!query.trim()) {
+      setSuggestions([])
+      return
+    }
+
+    try {
+      const searchTerm = `%${query.trim()}%`
+      const { data, error } = await supabase
+        .from('ticker_list')
+        .select('ticker, company')
+        .or(`ticker.ilike."${searchTerm}",company.ilike."${searchTerm}"`)
+        .limit(10)
+
+      if (error) throw error
+
+      // Map to expected format
+      const formattedData = (data || []).map((item: any) => ({
+        symbol: item.ticker,
+        name: item.company
+      }))
+
+      setSuggestions(formattedData)
+    } catch (error) {
+      console.error("Error fetching suggestions:", error)
+    }
+  }
+
+  React.useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    if (input.trim() && !isLoading) {
+      debounceTimer.current = setTimeout(() => {
+        fetchSuggestions(input)
+      }, 300)
+    } else {
+      setSuggestions([])
+    }
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    }
+  }, [input, isLoading])
 
   const latestAssistantMessage = [...messages].reverse().find(m => m.role === "assistant")
   const latestUserMessage = [...messages].reverse().find(m => m.role === "user")
@@ -34,6 +86,9 @@ export function ChatInterface() {
     if (!query.trim() || isLoading) return
 
     if (!hasSearched) setHasSearched(true)
+    setShowSuggestions(false)
+    setSuggestions([])
+    setSelectedIndex(-1)
 
     const userMessage: Message = { id: Date.now().toString(), role: "user", content: query }
     setMessages((prev) => [...prev, userMessage])
@@ -99,7 +154,29 @@ export function ChatInterface() {
               <input
                 autoFocus
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  setShowSuggestions(true)
+                  setSelectedIndex(-1)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault()
+                    setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1))
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault()
+                    setSelectedIndex(prev => Math.max(prev - 1, -1))
+                  } else if (e.key === "Enter" && selectedIndex >= 0) {
+                    e.preventDefault()
+                    const selected = suggestions[selectedIndex]
+                    setInput(`${selected.name} (${selected.symbol})`)
+                    handleSubmit({ preventDefault: () => { } } as React.FormEvent, `${selected.name} (${selected.symbol})`)
+                  } else if (e.key === "Escape") {
+                    setShowSuggestions(false)
+                  }
+                }}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                onFocus={() => input.trim() && setShowSuggestions(true)}
                 placeholder="Search company (provide entire company name)..."
                 className="flex-1 bg-transparent border-none focus:ring-0 py-6 px-4 text-lg outline-none"
               />
@@ -109,6 +186,35 @@ export function ChatInterface() {
                 </Button>
               </div>
             </div>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden rounded-xl border border-border bg-card/80 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+                <ScrollArea className="max-h-[300px]">
+                  <div className="p-2">
+                    {suggestions.map((item, index) => (
+                      <button
+                        key={item.symbol}
+                        type="button"
+                        onClick={() => {
+                          setInput(`${item.name} (${item.symbol})`)
+                          handleSubmit({ preventDefault: () => { } } as React.FormEvent, `${item.name} (${item.symbol})`)
+                        }}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all ${selectedIndex === index ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                          }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-semibold">{item.name}</span>
+                          <span className="text-xs text-muted-foreground">{item.symbol}</span>
+                        </div>
+                        <Search className={`h-4 w-4 transition-opacity ${selectedIndex === index ? "opacity-100" : "opacity-0"}`} />
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
           </form>
 
           <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
@@ -146,10 +252,60 @@ export function ChatInterface() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value)
+                setShowSuggestions(true)
+                setSelectedIndex(-1)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault()
+                  setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1))
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault()
+                  setSelectedIndex(prev => Math.max(prev - 1, -1))
+                } else if (e.key === "Enter" && selectedIndex >= 0) {
+                  e.preventDefault()
+                  const selected = suggestions[selectedIndex]
+                  setInput(`${selected.name} (${selected.symbol})`)
+                  handleSubmit({ preventDefault: () => { } } as React.FormEvent, `${selected.name} (${selected.symbol})`)
+                } else if (e.key === "Escape") {
+                  setShowSuggestions(false)
+                }
+              }}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onFocus={() => input.trim() && setShowSuggestions(true)}
               placeholder="Ask anything about stocks..."
               className="w-full bg-muted/50 rounded-full pl-10 pr-4 py-2 text-sm border-none focus:ring-1 focus:ring-primary transition-all outline-none"
             />
+            {/* Suggestions Dropdown (Compact) */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 z-50 overflow-hidden rounded-xl border border-border bg-card/90 backdrop-blur-xl shadow-xl animate-in fade-in slide-in-from-top-1 duration-200">
+                <ScrollArea className="max-h-[250px]">
+                  <div className="p-1">
+                    {suggestions.map((item, index) => (
+                      <button
+                        key={item.symbol}
+                        type="button"
+                        onClick={() => {
+                          setInput(`${item.name} (${item.symbol})`)
+                          handleSubmit({ preventDefault: () => { } } as React.FormEvent, `${item.name} (${item.symbol})`)
+                        }}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all ${selectedIndex === index ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                          }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{item.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{item.symbol}</span>
+                        </div>
+                        <Search className={`h-3 w-3 transition-opacity ${selectedIndex === index ? "opacity-100" : "opacity-0"}`} />
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
           </form>
 
           <div className="flex items-center gap-2">
