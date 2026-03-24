@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "concurrently \"npm run dev:next\" \"npm run dev:py\"",
+    "dev:next": "next dev",
+    "dev:py": "uvicorn api.index:app --host 127.0.0.1 --port 5328 --reload",
     "lint": "eslint .",
     "start": "next start"
   },
@@ -70,6 +72,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "baseline-browser-mapping": "^2.10.0",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",

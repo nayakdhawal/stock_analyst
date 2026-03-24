@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     try {
         const { data, error } = await supabase
             .from('ticker_list')
-            .select('symbol:ticker, name:company')
-            .or(`ticker.ilike.%${query}%,company.ilike.%${query}%`)
+            .select('ticker, name:company, sector:exchange')
+            .or(`ticker.ilike."%${query}%",company.ilike."%${query}%"`)
             .limit(10)
 
         if (error) {
@@ -21,7 +21,16 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
-        return NextResponse.json(data)
+        const formattedData = data.map((item: any) => {
+            const suffix = item.sector?.toUpperCase().includes('BSE') ? '.BO' : '.NS'
+            return {
+                ticker: `${item.ticker}${suffix}`,
+                name: item.name,
+                sector: item.sector
+            }
+        })
+
+        return NextResponse.json(formattedData)
     } catch (error) {
         console.error('Search error:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
