@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STOCK REGISTRY — stable fields only. price & change injected by yfinance later.
+// STOCK REGISTRY — initial landing page population data
 // ─────────────────────────────────────────────────────────────────────────────
 const STOCK_DATABASE = [
   { ticker: "RELIANCE.NS", name: "Reliance Industries Limited", sector: "Energy", exchange: "NSE" },
@@ -48,54 +49,7 @@ const TOP_STOCKS = [
   { ticker: "TATAMOTORS.NS", name: "Tata Motors", sector: "Automobile" },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DETAIL PAGE DATA — replace this object with your live yfinance fetch
-// In production: const stock = await fetch(`/api/stock/${ticker}`).then(r => r.json())
-// ─────────────────────────────────────────────────────────────────────────────
-const RELIANCE_DATA = {
-  ticker: "RELIANCE.NS", shortName: "RELIANCE INDUSTRIES LTD",
-  longName: "Reliance Industries Limited", exchange: "NSE", currency: "INR",
-  marketState: "CLOSED", website: "https://www.ril.com",
-  sector: "Energy", industry: "Oil & Gas Refining & Marketing",
-  fullTimeEmployees: 403303,
-  longBusinessSummary: "Reliance Industries Limited engages in the hydrocarbon exploration and production, oil and chemicals, retail, and digital service businesses worldwide. It operates through Oil to Chemicals, Oil and Gas, Retail, Digital Services, and Others segments. The company offers refining and marketing products, including liquefied petroleum gas, propylene, naphtha, gasoline, jet/aviation turbine fuel, kerosine oil, diesel, sulphur, and petroleum coke. It also provides polymers, including high-density and low-density polyethylene (PE), linear low-density PE, homopolymer, random and impact copolymer, and polyvinyl chloride; fibre intermediates, such as purified terephthalic acid, and ethylene glycols and oxide; aromatics, such as paraxylene, ortho xylene, benzene, and linear alkyl benzene and paraffin; and textiles comprising fabrics, apparel, and auto furnishings. In addition, the company offers elastomers, such as polybutadiene rubber, styrene butadiene rubber, and butyl rubber; fibre and yarn polyesters; and bioenergy solutions, consisting of compressed biogas, and pellets and briquettes. Further, it engages in oil and gas exploration and production activities; and operates various stores comprising supermarket, hypermarket, wholesale cash and carry, specialty, and online stores, as well as stores that offer apparel, beauty and cosmetics, accessories, footwear, consumer electronics, and others. Additionally, the company operates media and entertainment platforms, and Network18 and television channels; publishes magazines; and offers highway hospitality and fleet management services. It also provides digital services, including connectivity, fibre, mobile devices, apps, business, and other digital solutions. The company was founded in 1957 and is based in Mumbai, India.",
-  currentPrice: 1414.40, regularMarketPreviousClose: 1384.80,
-  regularMarketOpen: 1398.00, regularMarketDayLow: 1396.10,
-  regularMarketDayHigh: 1430.00, regularMarketDayRange: "1396.1 - 1430.0",
-  regularMarketChange: 29.599976, regularMarketChangePercent: 2.137491,
-  regularMarketVolume: 22993855, averageVolume: 13710676, averageDailyVolume10Day: 19389338,
-  fiftyTwoWeekLow: 1114.85, fiftyTwoWeekHigh: 1611.80,
-  fiftyTwoWeekRange: "1114.85 - 1611.8",
-  fiftyTwoWeekLowChange: 299.55, fiftyTwoWeekLowChangePercent: 0.26869,
-  fiftyTwoWeekHighChange: -197.40, fiftyTwoWeekHighChangePercent: -0.12247,
-  fiftyTwoWeekChangePercent: 0.08624,
-  fiftyDayAverage: 1411.98, fiftyDayAverageChange: 2.42, fiftyDayAverageChangePercent: 0.001713,
-  twoHundredDayAverage: 1447.778, twoHundredDayAverageChange: -33.378, twoHundredDayAverageChangePercent: -0.023054,
-  marketCap: 19140328816640, enterpriseValue: 22379199725568,
-  enterpriseToRevenue: 2.184, enterpriseToEbitda: 13.285,
-  trailingPE: 22.987, forwardPE: 21.525, priceToBook: 2.182, bookValue: 648.12,
-  priceToSalesTrailing12Months: 1.868, beta: 0.205, trailingEps: 61.53, forwardEps: 65.708,
-  dividendRate: 5.5, dividendYield: 0.39, payoutRatio: 0.0894, fiveYearAvgDividendYield: 0.44,
-  totalRevenue: 10245479858176, revenuePerShare: 757.082,
-  netIncomeToCommon: 832110002176, ebitda: 1684509949952,
-  grossProfits: 3665570037760, totalDebt: 3745930018816,
-  totalCash: 2238710022144, totalCashPerShare: 165.457, debtToEquity: 35.651,
-  grossMargins: 0.35777, operatingMargins: 0.11852, ebitdaMargins: 0.16441, profitMargins: 0.08122,
-  revenueGrowth: 0.104, earningsGrowth: 0.006, earningsQuarterlyGrowth: 0.006,
-  targetLowPrice: 1370, targetMeanPrice: 1720.086, targetHighPrice: 2020,
-  recommendationKey: "strong_buy", recommendationMean: 1.45714,
-  numberOfAnalystOpinions: 35, averageAnalystRating: "1.5 - Strong Buy",
-  heldPercentInsiders: 0.51049, heldPercentInstitutions: 0.27971,
-  floatShares: 6606391655, sharesOutstanding: 13532472634,
-  auditRisk: 7, boardRisk: 10, compensationRisk: 7, shareHolderRightsRisk: 1, overallRisk: 10,
-  companyOfficers: [
-    { name: "Mr. Mukesh Dhirubhai Ambani", title: "Chairman & MD", age: 68 },
-    { name: "Mr. Nikhil Rasiklal Meswani", title: "Executive Director", age: 59 },
-    { name: "Mr. Hital Rasiklal Meswani", title: "Executive Director", age: 57 },
-    { name: "Mr. Srikanth Venkatachari", title: "Chief Financial Officer", age: 59 },
-    { name: "Mr. Anant Mukesh Ambani", title: "Whole-Time Director", age: null },
-  ],
-};
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED UTILITIES
@@ -395,6 +349,99 @@ const SectionHead = ({ kicker, title, byline, isMobile }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PRICE CHART COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+function PriceChart({ ticker }) {
+  const [range, setRange] = useState("1m");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!ticker) return;
+    setLoading(true);
+    fetch(`/api/py/history/${ticker}?range=${range.toLowerCase()}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.data) {
+           const formatted = res.data.map(d => {
+             const dt = new Date(d.Date || d.Datetime);
+             return {
+               ...d,
+               displayDate: range === "1d" 
+                  ? dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute:'2-digit' })
+                  : dt.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: range === '1y' || range === '5y' ? '2-digit' : undefined })
+             };
+           });
+           setData(formatted);
+        }
+        setLoading(false);
+      });
+  }, [ticker, range]);
+
+  const ranges = [
+    { label: "1D", val: "1d" },
+    { label: "1W", val: "1w" },
+    { label: "1M", val: "1m" },
+    { label: "1Y", val: "1y" },
+    { label: "5Y", val: "5y" }
+  ];
+
+  const isUp = data.length > 1 ? data[data.length-1].Close >= data[0].Close : true;
+  const strokeColor = isUp ? "#2d6a2d" : "#8b1a1a";
+  
+  return (
+    <div className="ink-box" style={{ marginTop: 24, marginBottom: 36, padding: "16px 20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 13, fontWeight: 700, color: "#1a1208", letterSpacing: "0.05em" }}>Market Trend</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {ranges.map(r => (
+            <button key={r.val} onClick={() => setRange(r.val)}
+              style={{
+                fontFamily: "'Libre Baskerville',serif", fontSize: 10, letterSpacing: "0.05em",
+                background: range === r.val ? "#1a1208" : "transparent",
+                color: range === r.val ? "#f5f0e8" : "#5a4a2a",
+                border: "1px solid",
+                borderColor: range === r.val ? "#1a1208" : "#8b7355",
+                padding: "4px 8px", cursor: "pointer", transition: "all 0.15s"
+              }}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div style={{ height: 280, width: "100%", position: "relative" }}>
+        {loading && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(237,232,220,0.6)", zIndex: 10, fontFamily: "'Libre Baskerville',serif", fontSize: 11, color: "#5a4a2a" }}>Fetching telegraph data...</div>}
+        
+        {data.length > 0 && (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, fill: "#5a4a2a" }} minTickGap={30} />
+              <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, fill: "#5a4a2a" }} tickFormatter={v => "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 0 })} />
+              <Tooltip 
+                contentStyle={{ background: "#faf7f0", border: "2px solid #1a1208", borderRadius: 0, boxShadow: "4px 4px 0 #1a1208", fontFamily: "'Libre Baskerville',serif", fontSize: 11 }}
+                itemStyle={{ color: "#1a1208", fontWeight: 700 }}
+                labelStyle={{ color: "#8b7355", marginBottom: 4, fontSize: 10 }}
+                formatter={(value, name) => ["₹" + value.toFixed(2), name]}
+                labelFormatter={(label) => label}
+              />
+              <Area type="monotone" dataKey="Open" stroke="#8b7355" strokeWidth={1.5} fillOpacity={0} strokeDasharray="3 3" />
+              <Area type="monotone" dataKey="Close" stroke={strokeColor} strokeWidth={2} fillOpacity={1} fill="url(#colorClose)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DETAIL PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 function DetailPage({ ticker, onBack, onNavigate }) {
@@ -687,6 +734,8 @@ function DetailPage({ ticker, onBack, onNavigate }) {
                 </div>
               </div>
             </div>
+            <PriceChart ticker={stock.ticker} />
+
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5a4a2a", marginBottom: 6 }}>52-Week Range</div>
               <div style={{ position: "relative", height: 24 }}>
@@ -1198,7 +1247,7 @@ function LandingPage({ onNavigate }) {
         {/* Footer */}
         <div style={{ borderTop: "3px double #1a1208", marginTop: 40, paddingTop: 12, display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", gap: 6, textAlign: isMobile ? "center" : "unset" }}>
           <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, color: "#8b7355", letterSpacing: "0.1em" }}>© THE MARKET CHRONICLE · NSE · BSE · {STOCK_DATABASE.length} EQUITIES INDEXED</div>
-          <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, color: "#8b7355", fontStyle: "italic" }}>Stock registry only. Live prices available once yfinance integration is complete.</div>
+          <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, color: "#8b7355", fontStyle: "italic" }}>All data powered by yfinance API. Market prices may be delayed.</div>
         </div>
       </div>
     </div>

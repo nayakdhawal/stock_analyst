@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     
     // Forward the payload directly to the n8n webhook
     // This runs server-side (Node.js edge), completely bypassing browser CORS
-    const n8nResponse = await fetch("https://n8n.srv1031893.hstgr.cloud/webhook-test/61743c7f-648d-493d-ba76-708860eddd12", {
+    const n8nResponse = await fetch("https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
