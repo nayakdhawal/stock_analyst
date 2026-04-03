@@ -1261,14 +1261,41 @@ export default function MarketChronicle() {
   const [page, setPage] = useState("landing");   // "landing" | "detail"
   const [currentTicker, setCurrentTicker] = useState(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ticker = params.get("ticker");
+    if (ticker) {
+      setCurrentTicker(ticker);
+      setPage("detail");
+    }
+
+    const handlePopState = () => {
+      const currentParams = new URLSearchParams(window.location.search);
+      const currentTickerParam = currentParams.get("ticker");
+      if (currentTickerParam) {
+        setCurrentTicker(currentTickerParam);
+        setPage("detail");
+      } else {
+        setPage("landing");
+        setCurrentTicker(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const navigateTo = (stock) => {
     setCurrentTicker(stock.ticker);
     setPage("detail");
+    window.history.pushState({}, "", `?ticker=${encodeURIComponent(stock.ticker)}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
     setPage("landing");
+    setCurrentTicker(null);
+    window.history.pushState({}, "", window.location.pathname);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
