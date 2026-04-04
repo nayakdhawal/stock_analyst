@@ -23,8 +23,10 @@ export async function GET(request: Request) {
 
         const formattedData = data.map((item: any) => {
             const suffix = item.sector?.toUpperCase().includes('BSE') ? '.BO' : '.NS'
+            const tickerStr = String(item.ticker);
+            const finalTicker = tickerStr.toUpperCase().endsWith(suffix) ? tickerStr : `${tickerStr}${suffix}`;
             return {
-                ticker: `${item.ticker}${suffix}`,
+                ticker: finalTicker,
                 name: item.name,
                 sector: item.sector
             }

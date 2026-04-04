@@ -26,7 +26,7 @@ def populate_tickers():
     inserted_count = 0
     print("Starting to fetch and populate tickers into Supabase...")
     for t in tickers:
-        bse_ticker = f"{t}.BO"
+        bse_ticker = t if t.endswith(".BO") else f"{t}.BO"
         try:
             print(f"Fetching data for {bse_ticker}...")
             stock = yf.Ticker(bse_ticker)

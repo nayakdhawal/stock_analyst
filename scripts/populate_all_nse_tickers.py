@@ -47,7 +47,7 @@ def populate_all_nse_tickers():
         company_name = str(row['NAME OF COMPANY']).strip()
         
         # yfinance uses .NS suffix for National Stock Exchange of India
-        nse_ticker = f"{symbol}.NS"
+        nse_ticker = symbol if symbol.endswith(".NS") else f"{symbol}.NS"
         
         if nse_ticker in existing_tickers:
             continue

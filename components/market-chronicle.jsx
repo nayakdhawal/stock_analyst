@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STOCK REGISTRY — initial landing page population data
@@ -46,7 +48,6 @@ const TOP_STOCKS = [
   { ticker: "BHARTIARTL.NS", name: "Bharti Airtel", sector: "Telecom" },
   { ticker: "MARUTI.NS", name: "Maruti Suzuki", sector: "Automobile" },
   { ticker: "SUNPHARMA.NS", name: "Sun Pharma", sector: "Pharma" },
-  { ticker: "TATAMOTORS.NS", name: "Tata Motors", sector: "Automobile" },
 ];
 
 
@@ -99,6 +100,7 @@ const SHARED_CSS = `
   @media(max-width:420px){ .grid-3 { grid-template-columns:1fr 1fr; } }
   @keyframes fadeUp { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
   .fade-up { animation:fadeUp 0.4s ease forwards; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .ink-box { border:1px solid #8b7355; padding:12px; background:#ede8dc; }
   .dark-box { background:#1a1208; color:#f5f0e8; padding:14px 16px; }
   .warn-box { background:#f0ded0; border:2px solid #8b1a1a; padding:12px; }
@@ -117,13 +119,15 @@ function SearchBar({ onNavigate, compact = false }) {
   const [results, setResults] = useState([]);
   const [highlighted, setHighlighted] = useState(-1);
   const [isOpen, setIsOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef(null);
   const dropRef = useRef(null);
 
   useEffect(() => {
     if (query.trim().length < 1) { setResults([]); setIsOpen(false); return; }
-    
+
     const fetchResults = async () => {
+      setIsSearching(true);
       try {
         const res = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`);
         if (res.ok) {
@@ -134,6 +138,8 @@ function SearchBar({ onNavigate, compact = false }) {
         }
       } catch (err) {
         console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
       }
     };
 
@@ -178,10 +184,12 @@ function SearchBar({ onNavigate, compact = false }) {
           autoComplete="off"
           spellCheck="false"
         />
-        {query && (
+        {isSearching ? (
+          <div style={{ width: 18, height: 18, border: "2px solid #e8e0d0", borderTopColor: "#8b1a1a", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0, margin: "0 4px" }} />
+        ) : query ? (
           <button onClick={() => { setQuery(""); setIsOpen(false); inputRef.current?.focus(); }}
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#8b7355", flexShrink: 0, lineHeight: 1, padding: "0 4px" }}>×</button>
-        )}
+        ) : null}
       </div>
       {isOpen && (
         <div className="dropdown">
@@ -216,13 +224,15 @@ function SearchBarInline({ onNavigate }) {
   const [results, setResults] = useState([]);
   const [highlighted, setHighlighted] = useState(-1);
   const [isOpen, setIsOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef(null);
   const dropRef = useRef(null);
 
   useEffect(() => {
     if (query.trim().length < 1) { setResults([]); setIsOpen(false); return; }
-    
+
     const fetchResults = async () => {
+      setIsSearching(true);
       try {
         const res = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`);
         if (res.ok) {
@@ -233,6 +243,8 @@ function SearchBarInline({ onNavigate }) {
         }
       } catch (err) {
         console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
       }
     };
 
@@ -275,6 +287,9 @@ function SearchBarInline({ onNavigate }) {
           className: "nav-search-input",
         }}
       />
+      {isSearching && (
+        <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, border: "2px solid #e8e0d0", borderTopColor: "#8b1a1a", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+      )}
       <style>{`.nav-placeholder::placeholder{color:#5a4a2a}`}</style>
 
       {/* Dropdown — same newspaper style, anchors below the strip */}
@@ -352,7 +367,7 @@ const SectionHead = ({ kicker, title, byline, isMobile }) => (
 // PRICE CHART COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 function PriceChart({ ticker }) {
-  const [range, setRange] = useState("1m");
+  const [range, setRange] = useState("1w");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -363,16 +378,16 @@ function PriceChart({ ticker }) {
       .then(r => r.json())
       .then(res => {
         if (res.data) {
-           const formatted = res.data.map(d => {
-             const dt = new Date(d.Date || d.Datetime);
-             return {
-               ...d,
-               displayDate: range === "1d" 
-                  ? dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute:'2-digit' })
-                  : dt.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: range === '1y' || range === '5y' ? '2-digit' : undefined })
-             };
-           });
-           setData(formatted);
+          const formatted = res.data.map(d => {
+            const dt = new Date(d.Date || d.Datetime);
+            return {
+              ...d,
+              displayDate: range === "1d"
+                ? dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                : dt.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: range === '1y' || range === '5y' ? '2-digit' : undefined })
+            };
+          });
+          setData(formatted);
         }
         setLoading(false);
       });
@@ -386,9 +401,9 @@ function PriceChart({ ticker }) {
     { label: "5Y", val: "5y" }
   ];
 
-  const isUp = data.length > 1 ? data[data.length-1].Close >= data[0].Close : true;
+  const isUp = data.length > 1 ? data[data.length - 1].Close >= data[0].Close : true;
   const strokeColor = isUp ? "#2d6a2d" : "#8b1a1a";
-  
+
   return (
     <div className="ink-box" style={{ marginTop: 24, marginBottom: 36, padding: "16px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -409,22 +424,22 @@ function PriceChart({ ticker }) {
           ))}
         </div>
       </div>
-      
+
       <div style={{ height: 280, width: "100%", position: "relative" }}>
         {loading && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(237,232,220,0.6)", zIndex: 10, fontFamily: "'Libre Baskerville',serif", fontSize: 11, color: "#5a4a2a" }}>Fetching telegraph data...</div>}
-        
+
         {data.length > 0 && (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0}/>
+                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, fill: "#5a4a2a" }} minTickGap={30} />
               <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, fill: "#5a4a2a" }} tickFormatter={v => "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 0 })} />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ background: "#faf7f0", border: "2px solid #1a1208", borderRadius: 0, boxShadow: "4px 4px 0 #1a1208", fontFamily: "'Libre Baskerville',serif", fontSize: 11 }}
                 itemStyle={{ color: "#1a1208", fontWeight: 700 }}
                 labelStyle={{ color: "#8b7355", marginBottom: 4, fontSize: 10 }}
@@ -584,8 +599,48 @@ function DetailPage({ ticker, onBack, onNavigate }) {
 
   if (loadingStock) {
     return (
-      <div style={{ background: "#f5f0e8", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Libre Baskerville',serif", color: "#1a1208" }}>
-        <p>Loading Telegraph Data for {ticker}...</p>
+      <div style={{ background: "#f5f0e8", minHeight: "100vh", fontFamily: "'Playfair Display',Georgia,serif", color: "#1a1208", padding: `10px ${px}px 0` }}>
+        <style>{`
+          @keyframes inkPulse {
+            0% { opacity: 0.3; background: #d4c9b0; }
+            50% { opacity: 0.6; background: #8b7355; }
+            100% { opacity: 0.3; background: #d4c9b0; }
+          }
+          .skeleton-block {
+            animation: inkPulse 1.8s ease-in-out infinite;
+          }
+        `}</style>
+        
+        {/* Fake Masthead */}
+        <div style={{ borderBottom: "4px solid #1a1208", paddingBottom: 16, marginBottom: 20 }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontFamily: "'UnifrakturMaguntia',cursive", fontSize: isMobile ? "2rem" : "clamp(2rem,6vw,3.8rem)", color: "#1a1208", opacity: 0.8 }}>The Market Chronicle</div>
+            <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "#5a4a2a", marginTop: 4 }}>
+              Dispatching Telegraph Data for {ticker}...
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton Layout */}
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          {/* Headline Skeleton */}
+          <div className="skeleton-block" style={{ height: 40, width: "70%", marginBottom: 12 }} />
+          <div className="skeleton-block" style={{ height: 20, width: "40%", marginBottom: 30 }} />
+
+          {/* Columns Skeleton */}
+          <div style={{ display: "flex", gap: 20, flexDirection: isMobile ? "column" : "row" }}>
+             <div style={{ flex: 2 }}>
+               <div className="skeleton-block" style={{ height: 240, width: "100%", marginBottom: 20 }} />
+               <div className="skeleton-block" style={{ height: 16, width: "95%", marginBottom: 8 }} />
+               <div className="skeleton-block" style={{ height: 16, width: "90%", marginBottom: 8 }} />
+               <div className="skeleton-block" style={{ height: 16, width: "85%", marginBottom: 8 }} />
+             </div>
+             <div style={{ flex: 1 }}>
+               <div className="skeleton-block" style={{ height: 100, width: "100%", marginBottom: 10 }} />
+               <div className="skeleton-block" style={{ height: 100, width: "100%", marginBottom: 10 }} />
+             </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1129,11 +1184,31 @@ function DetailPage({ ticker, onBack, onNavigate }) {
 
                 {/* Raw fallback — if n8n returns plain string or unexpected shape */}
                 {!aiData.summary && !aiData.keyPoints && (
-                  <div className="ink-box">
-                    <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#8b1a1a", fontWeight: 700, marginBottom: 10 }}>§ Analysis</div>
-                    <pre style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 12, lineHeight: 1.9, color: "#2a1f0a", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                      {typeof aiData === "string" ? aiData : JSON.stringify(aiData, null, 2)}
-                    </pre>
+                  <div className="ink-box" style={{ padding: "20px 24px" }}>
+                    <div style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#8b1a1a", fontWeight: 700, marginBottom: 16 }}>§ Analysis Desk Dispatch</div>
+                    <div style={{ color: "#2a1f0a" }}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({node, ...props}) => <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, marginTop: 24, marginBottom: 12, borderBottom: "2px solid #8b7355", paddingBottom: 4 }} {...props} />,
+                          h2: ({node, ...props}) => <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 900, marginTop: 22, marginBottom: 10 }} {...props} />,
+                          h3: ({node, ...props}) => <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 900, marginTop: 20, marginBottom: 8, color: "#8b1a1a" }} {...props} />,
+                          p: ({node, ...props}) => <p style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 13, lineHeight: 1.8, marginBottom: 14 }} {...props} />,
+                          ul: ({node, ...props}) => <ul style={{ paddingLeft: 24, marginBottom: 16 }} {...props} />,
+                          ol: ({node, ...props}) => <ol style={{ paddingLeft: 24, marginBottom: 16 }} {...props} />,
+                          li: ({node, ...props}) => <li style={{ fontFamily: "'Libre Baskerville',serif", fontSize: 13, lineHeight: 1.6, marginBottom: 4 }} {...props} />,
+                          table: ({node, ...props}) => <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20, fontSize: 12, fontFamily: "'Libre Baskerville',serif", background: "#faf7f0" }} {...props} /></div>,
+                          th: ({node, ...props}) => <th style={{ borderBottom: "3px double #1a1208", padding: "10px 12px", textAlign: "left", color: "#1a1208", fontWeight: 900, letterSpacing: "0.05em" }} {...props} />,
+                          td: ({node, ...props}) => <td style={{ borderBottom: "1px dotted #8b7355", padding: "8px 12px", verticalAlign: "top" }} {...props} />,
+                          img: ({node, ...props}) => <img style={{ maxWidth: "100%", border: "3px solid #1a1208", margin: "16px 0", boxShadow: "4px 4px 0 #d4c9b0" }} {...props} />,
+                          strong: ({node, ...props}) => <strong style={{ fontWeight: 900, color: "#8b1a1a" }} {...props} />,
+                          a: ({node, ...props}) => <a style={{ color: "#8b6030", textDecoration: "underline", textUnderlineOffset: "3px" }} target="_blank" rel="noopener noreferrer" {...props} />,
+                          hr: ({node, ...props}) => <hr style={{ border: "none", borderTop: "1px solid #8b7355", margin: "24px 0" }} {...props} />
+                        }}
+                      >
+                        {typeof aiData === "string" ? aiData.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu, "") : JSON.stringify(aiData, null, 2)}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 )}
 
