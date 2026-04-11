@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
+
+const requestSchema = z.object({
+  message: z.string().min(1).max(200).trim(),
+})
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json()
+    const body = await req.json()
+    const parsed = requestSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
+    }
+    const { message } = parsed.data
     const isDev = process.env.NODE_ENV === "development"
     const webhookUrl = process.env.N8N_WEBHOOK_URL
 
@@ -10,16 +20,10 @@ export async function POST(req: Request) {
     console.log("[v0] Environment:", process.env.NODE_ENV)
 
     if (!webhookUrl) {
-      if (isDev) {
-        // Fallback for local development if no N8N_WEBHOOK_URL is set
-        const devFallback = "https://n8n.srv1031893.hstgr.cloud/webhook-test/61743c7f-648d-493d-ba76-708860eddd12"
-        console.warn("[v0] N8N_WEBHOOK_URL not set. Using dev fallback:", devFallback)
-        return await handleWebhookCall(devFallback, message)
-      }
-
-      console.warn("[v0] N8N_WEBHOOK_URL not set in production. Using default production URL.")
-      const prodFallback = "https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12"
-      return await handleWebhookCall(prodFallback, message)
+      return NextResponse.json(
+        { error: "Service not configured. N8N_WEBHOOK_URL environment variable is missing." },
+        { status: 503 }
+      )
     }
 
     return await handleWebhookCall(webhookUrl, message)

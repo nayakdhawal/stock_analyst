@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { z } from 'zod'
+
+const querySchema = z.string().min(1).max(100).trim()
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get('q')
+    const raw = searchParams.get('q')
 
-    if (!query) {
+    if (!raw) {
         return NextResponse.json([])
     }
+
+    const parsed = querySchema.safeParse(raw)
+    if (!parsed.success) {
+        return NextResponse.json({ error: "Invalid search query" }, { status: 400 })
+    }
+    const query = parsed.data
 
     try {
         const { data, error } = await supabase

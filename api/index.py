@@ -6,12 +6,17 @@ from datetime import datetime, timedelta
 # For Vercel Serverless, app must be exposed in api/index.py
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
+import os
+
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()] if allowed_origins_env else []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 @app.get("/api/py/ticker/{ticker}")
