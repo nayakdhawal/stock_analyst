@@ -4,9 +4,17 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
+    const webhookUrl = process.env.N8N_WEBHOOK_URL
+    if (!webhookUrl) {
+      return NextResponse.json(
+        { error: "Service not configured. N8N_WEBHOOK_URL environment variable is missing." },
+        { status: 503 }
+      )
+    }
+
     // Forward the payload directly to the n8n webhook
     // This runs server-side (Node.js edge), completely bypassing browser CORS
-    const n8nResponse = await fetch("https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12", {
+    const n8nResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
