@@ -4,7 +4,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    const webhookUrl = process.env.N8N_WEBHOOK_URL
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || "https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12";
     if (!webhookUrl) {
       return NextResponse.json(
         { error: "Service not configured. N8N_WEBHOOK_URL environment variable is missing." },
@@ -44,3 +44,19 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET() {
+  const keys = Object.keys(process.env).filter(key => 
+    !key.toLowerCase().includes("key") && 
+    !key.toLowerCase().includes("secret") && 
+    !key.toLowerCase().includes("token") &&
+    !key.toLowerCase().includes("password")
+  );
+  return NextResponse.json({
+    keys,
+    hasN8nUrl: !!process.env.N8N_WEBHOOK_URL,
+    n8nUrlLength: process.env.N8N_WEBHOOK_URL ? process.env.N8N_WEBHOOK_URL.length : 0,
+    nodeEnv: process.env.NODE_ENV
+  });
+}
+

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
     const { message } = parsed.data
     const isDev = process.env.NODE_ENV === "development"
-    const webhookUrl = process.env.N8N_WEBHOOK_URL
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || "https://n8n.srv1031893.hstgr.cloud/webhook/61743c7f-648d-493d-ba76-708860eddd12";
 
     console.log("[v0] Webhook request started for message:", message)
     console.log("[v0] Environment:", process.env.NODE_ENV)
