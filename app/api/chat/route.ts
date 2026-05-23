@@ -37,13 +37,22 @@ async function handleWebhookCall(webhookUrl: string, message: string) {
   try {
     console.log("[v0] Using webhook URL:", webhookUrl)
 
-    // We append the stock name as a query parameter
+    // Keep the stock name as a query parameter for backwards compatibility
     const urlWithParams = new URL(webhookUrl)
     urlWithParams.searchParams.append("stock", message)
 
+    // Make a POST request to n8n (since the webhook is configured for POST)
     const n8nResponse = await fetch(urlWithParams.toString(), {
-      method: "GET",
-      headers: { Accept: "application/json" },
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        stock: message,
+        name: message,
+        message: message,
+      }),
     })
 
     console.log("[v0] Webhook response status:", n8nResponse.status)
